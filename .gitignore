@@ -1,0 +1,12 @@
+# Ignore Python virtual environments
+venv/
+
+# Ignore video files
+*.mp4
+
+# Ignore editor/OS files
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,13 @@
+opencv-python
+dlib
+face_recognition
+numpy
+matplotlib
+mediapipe
+librosa
+scikit-learn
+torch
+torchvision
+torchaudio
+transformers
+moviepy
