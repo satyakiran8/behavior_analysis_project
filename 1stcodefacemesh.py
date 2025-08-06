@@ -69,7 +69,7 @@ eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 # Check if the classifiers were loaded correctly
 if face_cascade.empty() or eye_cascade.empty():
     print("Error: Could not load cascade classifier XML files.")
-    print("Please ensure 'haascade_frontalface_default.xml' and 'haascade_eye.xml'")
+    print("Please ensure 'haarcascade_frontalface_default.xml' and 'haarcascade_eye.xml'")
     print("are in the same directory as this script.")
     exit()
 
@@ -171,15 +171,6 @@ total_video_frames = 0
 face_detected_in_frame = False
 eyes_detected_in_frame = False
 
-# Define a dark theme color palette (BGR format for OpenCV)
-COLOR_DARK_BLUE = (139, 0, 0)
-COLOR_DARK_MAGENTA = (139, 0, 139)
-COLOR_DARK_CYAN = (139, 139, 0)
-COLOR_DARK_RED = (0, 0, 139)
-COLOR_DARK_GRAY = (100, 100, 100)
-COLOR_MEDIUM_GRAY = (150, 150, 150)
-COLOR_FACE_RECT = (255, 0, 0) # Keep blue for face rectangle for visibility
-
 try:
     # Open the video source (webcam)
     cap = cv2.VideoCapture(WEBCAM_INDEX)
@@ -219,14 +210,14 @@ try:
             face_detected_in_frame = True
             for (x, y, w, h) in faces:
                 # Draw rectangle on face
-                cv2.rectangle(frame, (x, y), (x + w, y + h), COLOR_FACE_RECT, 2)
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
                 
                 # Detect facial emotions
                 results = emotion_detector.detect_emotions(frame[y:y+h, x:x+w])
                 if results:
                     dominant_emotion, score = emotion_detector.top_emotion(frame[y:y+h, x:x+w])
                     face_emotion_counts[dominant_emotion] += 1
-                    cv2.putText(frame, f"Emotion: {dominant_emotion.capitalize()}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, COLOR_DARK_MAGENTA, 2)
+                    cv2.putText(frame, f"Emotion: {dominant_emotion.capitalize()}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                     
                 # Detect eyes within the face region
                 roi_gray = gray[y:y+h, x:x+w]
@@ -235,7 +226,7 @@ try:
                     eyes_detected_in_frame = True
                     for (ex, ey, ew, eh) in eyes:
                         # Draw rectangle around eyes
-                        cv2.rectangle(frame, (x + ex, y + ey), (x + ex + ew, y + ey + eh), COLOR_DARK_MAGENTA, 2)
+                        cv2.rectangle(frame, (x + ex, y + ey), (x + ex + ew, y + ey + eh), (0, 255, 0), 2)
 
         # --- Hand Gesture Detection (MediaPipe) ---
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -247,6 +238,8 @@ try:
                 mp.solutions.drawing_utils.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
         
         # --- Behavioral and Psychological Signals Inference ---
+        # Note: These are simple heuristics. A real system would use a
+        # more sophisticated model trained for these specific signals.
         attentiveness = "Attentive" if eyes_detected_in_frame else "Inattentive"
         hand_use = "Active" if hand_results.multi_hand_landmarks else "Still"
         
@@ -258,41 +251,41 @@ try:
 
         # Combine scores into a simple psychological metric
         positive_face_score = face_percentages.get('happy', 0) + face_percentages.get('neutral', 0)
+        
+        # Vocal tone contribution (arbitrary weighting for demonstration)
         positive_vocal_score = tone_percentages.get('calm', 0) + tone_percentages.get('neutral', 0)
-        hand_score = 100 - (hand_gesture_count / (total_video_frames + 1)) * 100
+        
+        # Hand gesture contribution (frequent gestures might indicate nervousness)
+        hand_score = 100 - (hand_gesture_count / (total_video_frames + 1)) * 100 # Invert for 'stillness'
 
         overall_psychological_score = (positive_face_score * 0.5) + (positive_vocal_score * 0.4) + (hand_score * 0.1)
 
         # --- Overlay text on the video frame ---
         y_offset = 20
-        cv2.putText(frame, "--- Comprehensive Analysis ---", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, COLOR_DARK_BLUE, 2)
+        cv2.putText(frame, "--- Comprehensive Analysis ---", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         y_offset += 30
-        cv2.putText(frame, f"Overall Score: {overall_psychological_score:.2f}%", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, COLOR_DARK_MAGENTA, 2)
+        cv2.putText(frame, f"Overall Score: {overall_psychological_score:.2f}%", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
         y_offset += 40
         
-        cv2.putText(frame, "Facial Analysis:", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, COLOR_DARK_BLUE, 1)
+        cv2.putText(frame, "Facial Analysis:", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
         y_offset += 25
         for emotion, percentage in face_percentages.items():
-            color = COLOR_DARK_CYAN
-            # Change color to dark red for specific emotions
-            if emotion in ['neutral', 'sad', 'happy']:
-                color = COLOR_DARK_RED
-            cv2.putText(frame, f"  {emotion.capitalize()}: {percentage:.2f}%", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 1)
+            cv2.putText(frame, f"  {emotion.capitalize()}: {percentage:.2f}%", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 1)
             y_offset += 25
             
         y_offset += 15
-        cv2.putText(frame, "Vocal Tone Analysis:", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, COLOR_DARK_BLUE, 1)
+        cv2.putText(frame, "Vocal Tone Analysis:", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
         y_offset += 25
         for tone, percentage in tone_percentages.items():
-            cv2.putText(frame, f"  {tone.capitalize()}: {percentage:.2f}%", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, COLOR_DARK_RED, 1)
+            cv2.putText(frame, f"  {tone.capitalize()}: {percentage:.2f}%", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 200, 0), 1)
             y_offset += 25
         
         y_offset += 15
-        cv2.putText(frame, "Behavioral Signals:", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, COLOR_DARK_BLUE, 1)
+        cv2.putText(frame, "Behavioral Signals:", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
         y_offset += 25
-        cv2.putText(frame, f"  Attentiveness: {attentiveness}", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, COLOR_DARK_RED, 1)
+        cv2.putText(frame, f"  Attentiveness: {attentiveness}", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 1)
         y_offset += 25
-        cv2.putText(frame, f"  Hand Movements: {hand_use}", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, COLOR_DARK_RED, 1)
+        cv2.putText(frame, f"  Hand Movements: {hand_use}", (10, y_offset), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 1)
 
         # Display the resulting frame
         cv2.imshow('Comprehensive Behavioral Analysis (Press q to quit)', frame)
